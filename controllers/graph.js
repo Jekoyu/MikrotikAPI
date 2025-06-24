@@ -21,31 +21,74 @@ async function getGraphAll(req, res) {
     const keys = await getSortedKeys();
     if (keys.length < 2) throw new Error('Data tidak cukup');
 
-    const datasets = {}; // { ether1: [{time, up, down}], ... }
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
+    // Persiapkan struktur 24 jam (jam 00-23)
+    const hourlyData = {}; // jam: { uploadTotal, downloadTotal, count }
+    for (let i = 0; i < 24; i++) {
+      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      const hourKey = `${String(date.getHours()).padStart(2, '0')}:00`;
+      hourlyData[hourKey] = { uploadTotal: 0, downloadTotal: 0, count: 0 };
+    }
+
+    // Loop semua data Redis
     for (const key of keys) {
+      if (!key.includes('mikrotik:traffic:')) continue;
+
       const raw = await redisClient.get(key);
+      if (!raw) continue;
+
       const parsed = JSON.parse(raw);
-      const time = parseTimestamp(key);
+      const timestampStr = key.split(':').slice(2).join(':'); // "2025-06-24T21:10:00.137Z"
+      const time = new Date(timestampStr);
+      if (isNaN(time.getTime()) || time < twentyFourHoursAgo) continue;
+
+      const hour = `${String(time.getHours()).padStart(2, '0')}:00`;
 
       parsed.forEach(iface => {
         if (!/^ether[1-5]$/.test(iface.name)) return;
 
-        if (!datasets[iface.name]) datasets[iface.name] = [];
+        const upload = toMbps(Number(iface.tx));
+        const download = toMbps(Number(iface.rx));
 
-        datasets[iface.name].push({
-          time,
-          uploadMbps: toMbps(Number(iface.tx)),
-          downloadMbps: toMbps(Number(iface.rx)),
-        });
+        if (!hourlyData[hour]) {
+          hourlyData[hour] = { uploadTotal: 0, downloadTotal: 0, count: 0 };
+        }
+
+        hourlyData[hour].uploadTotal += upload;
+        hourlyData[hour].downloadTotal += download;
+        hourlyData[hour].count += 1;
       });
     }
 
-    res.json({ traffic: datasets });
+    // Susun data akhir
+    const categories = [];
+    const upload = [];
+    const download = [];
+
+    for (let i = 0; i < 24; i++) {
+      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      const hourKey = `${String(date.getHours()).padStart(2, '0')}:00`;
+      const data = hourlyData[hourKey];
+
+      categories.push(hourKey);
+      if (data.count > 0) {
+        upload.push(Number((data.uploadTotal / data.count).toFixed(2)));
+        download.push(Number((data.downloadTotal / data.count).toFixed(2)));
+      } else {
+        upload.push(0);
+        download.push(0);
+      }
+    }
+
+    res.json({ categories, upload, download });
+
   } catch (err) {
     res.status(500).json({ error: 'Gagal ambil data grafik: ' + err.message });
   }
 }
+
 
 // Per interface
 async function getGraphPerIface(req, res) {
