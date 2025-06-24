@@ -23,17 +23,19 @@ async function getGraphAll(req, res) {
     if (keys.length < 2) throw new Error('Data tidak cukup');
 
     const now = new Date();
+    const nowJakarta = toJakartaTime(now);
+    console.log('Current time in Jakarta:', nowJakarta.toISOString());
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Persiapkan struktur 24 jam (jam 00-23)
-    const hourlyData = {}; // jam: { uploadTotal, downloadTotal, count }
+    const hourlyData = {};
+
+    // Buat kategori 24 jam terakhir berdasarkan waktu Jakarta
     for (let i = 0; i < 24; i++) {
-      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      const date = new Date(nowJakarta.getTime() - (23 - i) * 60 * 60 * 1000);
       const hourKey = `${String(date.getHours()).padStart(2, '0')}:00`;
       hourlyData[hourKey] = { uploadTotal: 0, downloadTotal: 0, count: 0 };
     }
 
-    // Loop semua data Redis
     for (const key of keys) {
       if (!key.includes('mikrotik:traffic:')) continue;
 
@@ -41,11 +43,12 @@ async function getGraphAll(req, res) {
       if (!raw) continue;
 
       const parsed = JSON.parse(raw);
-      const timestampStr = key.split(':').slice(2).join(':'); // "2025-06-24T21:10:00.137Z"
+      const timestampStr = key.split(':').slice(2).join(':');
       const time = new Date(timestampStr);
       if (isNaN(time.getTime()) || time < twentyFourHoursAgo) continue;
 
-      const hour = `${String(time.getHours()).padStart(2, '0')}:00`;
+      const localTime = toJakartaTime(time); // Adjust to UTC+7
+      const hour = `${String(localTime.getHours()).padStart(2, '0')}:00`;
 
       parsed.forEach(iface => {
         if (!/^ether[1-5]$/.test(iface.name)) return;
@@ -63,13 +66,12 @@ async function getGraphAll(req, res) {
       });
     }
 
-    // Susun data akhir
     const categories = [];
     const upload = [];
     const download = [];
 
     for (let i = 0; i < 24; i++) {
-      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      const date = new Date(nowJakarta.getTime() - (23 - i) * 60 * 60 * 1000);
       const hourKey = `${String(date.getHours()).padStart(2, '0')}:00`;
       const data = hourlyData[hourKey];
 
@@ -89,6 +91,11 @@ async function getGraphAll(req, res) {
     res.status(500).json({ error: 'Gagal ambil data grafik: ' + err.message });
   }
 }
+
+function toJakartaTime(date) {
+  return new Date(date.getTime() + 7 * 60 * 60 * 1000); // UTC+7
+}
+
 
 
 // Per interface
