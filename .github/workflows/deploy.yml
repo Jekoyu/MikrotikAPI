@@ -24,8 +24,9 @@ jobs:
           export PNPM_HOME="/home/${{ secrets.SERVER_USER }}/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
           cd /var/www/MikrotikAPI
-          git pull origin main
+          git fetch origin
+          git reset --hard origin/main
           pnpm install
-          pm2 restart your-app || pm2 start app.js --name "your-app"
+          pm2 restart MikrotikAPI || pm2 start app.js --name "MikrotikAPI"
           pm2 save
         EOF
