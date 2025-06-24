@@ -92,6 +92,11 @@ const getSystem = async () => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
   return await conn.write('/system/resource/print');
 };
+const getLogs = async () => {
+  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
+  return await conn.write('/log/print');
+};
+
 
 
 
@@ -104,4 +109,5 @@ module.exports = {
   getInterfaces,
   getInterfaceTraffic,
   getSystem,
+  getLogs
 };
