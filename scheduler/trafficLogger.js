@@ -5,9 +5,12 @@ const { getTrafficInterfaces } = require('../mikrotik/queries');
 redisClient.on('error', err => console.error('❌ Redis error:', err));
 
 async function startTrafficLogger() {
+  const CRON_PATTERN = '*/5 * * * *'; // ⏲️ Tiap 5 menit
+  console.log(`📆 Jadwal scheduler: '${CRON_PATTERN}' (Asia/Jakarta)`);
+
   schedule.scheduleJob(
-    '*/5 * * * *', // per menit, ubah ke '*/5 * * * *' untuk tiap 5 menit nanti
-    { tz: 'Asia/Jakarta' }, // 🕒 zona waktu Jakarta
+    CRON_PATTERN,
+    { tz: 'Asia/Jakarta' },
     async () => {
       const timestamp = new Date().toISOString();
       console.log(`⏱️ [${timestamp}] Menjalankan scheduler (Asia/Jakarta)...`);
