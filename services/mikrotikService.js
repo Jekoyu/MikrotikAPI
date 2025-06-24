@@ -49,23 +49,22 @@ try {
 }
 
 // Function to connect to Mikrotik
+let isConnected = false;
+
 const connectToMikrotik = async () => {
   try {
-    console.log("Attempting to connect to Mikrotik...");
-    if (connection) {
+    if (!connection.connected) {
+      console.log("Attempting to connect to Mikrotik...");
       await connection.connect();
+      isConnected = true;
       console.log("Connected to Mikrotik successfully");
-      
-      // Check if the connection works by sending a test query
-      const result = await connection.query('/interface/print'); // Example query to verify connection
-      console.log('Test query result:', result);
-    } else {
-      console.error("No connection available to Mikrotik");
     }
   } catch (err) {
     console.error("Mikrotik connection error: ", err);
+    isConnected = false;
   }
 };
+
 
 connectToMikrotik();
 
