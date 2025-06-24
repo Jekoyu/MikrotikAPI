@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 // Routing
-app.use('/api/mikrotik', mikrotikRoutes);
+app.use( mikrotikRoutes);
 
 // Health check
 app.get('/', (req, res) => {
