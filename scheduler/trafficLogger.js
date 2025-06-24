@@ -1,16 +1,22 @@
-const schedule = require('node-schedule');
+const { CronJob } = require('cron');
 const { redisClient } = require('../config/redisClient');
 const { getTrafficInterfaces } = require('../mikrotik/queries');
 
 redisClient.on('error', err => console.error('❌ Redis error:', err));
 
+let job; // Untuk menghindari duplikasi scheduler
+
 async function startTrafficLogger() {
-  const CRON_PATTERN = '*/5 * * * *'; // ⏲️ Tiap 5 menit
+  if (job) {
+    console.warn('⚠️ Scheduler sudah berjalan, skip duplikasi.');
+    return;
+  }
+
+  const CRON_PATTERN = '0 */5 * * * *'; // Tiap 5 menit (detik ke-0)
   console.log(`📆 Jadwal scheduler: '${CRON_PATTERN}' (Asia/Jakarta)`);
 
-  schedule.scheduleJob(
+  job = new CronJob(
     CRON_PATTERN,
-    { tz: 'Asia/Jakarta' },
     async () => {
       const timestamp = new Date().toISOString();
       console.log(`⏱️ [${timestamp}] Menjalankan scheduler (Asia/Jakarta)...`);
@@ -25,8 +31,13 @@ async function startTrafficLogger() {
       } catch (err) {
         console.error('🚫 Gagal simpan traffic:', err.message);
       }
-    }
+    },
+    null,
+    true,
+    'Asia/Jakarta'
   );
+
+  job.start(); // Memulai job secara eksplisit
 }
 
 module.exports = startTrafficLogger;
