@@ -13,7 +13,8 @@ function parseTimestamp(key) {
 }
 
 // Convert bytes → Megabit (Mb)
-const toMbps = (bytes) => (bytes * 8) / (1024 * 1024);
+const toMbps = (bytes) => bytes / (1024 * 1024); // sebenarnya MB, tapi biarkan nama tetap
+
 
 // Semua interface (ether1–5)
 async function getGraphAll(req, res) {
