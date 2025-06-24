@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { connectToMikrotik, getIdentity, pingAddress, isConnected ,getInterfaces,getInterfaceTraffic,getDevices} = require('../mikrotik/client');
+const { connectToMikrotik, getIdentity, pingAddress, isConnected ,getInterfaces,getInterfaceTraffic,getDevices,getSystem} = require('../mikrotik/client');
 const { getAverageTraffic, getAllAverages } = require('../utils/getAverageTraffic');
 const {getGraphAll,getGraphPerIface,
 } = require('../controllers/graph');
@@ -54,6 +54,16 @@ router.get('/connect', async (req, res) => {
     try {
       const identity = await getIdentity();
       res.json({ identity });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  
+  
+  router.get('/system', async (req, res) => {
+    try {
+      const system = await getSystem();
+      res.json({ system });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

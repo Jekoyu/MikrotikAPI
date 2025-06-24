@@ -65,8 +65,17 @@ const getDevices = async () => {
 };
 const getInterfaces = async () => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  return await conn.write('/interface/print');
+
+  const allInterfaces = await conn.write('/interface/print');
+  
+ 
+  const filtered = allInterfaces.filter(i =>
+    /^ether[1-5]$/.test(i.name)
+  );
+
+  return filtered;
 };
+
 const getInterfaceTraffic = async (iface) => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
   if (!iface) throw new Error('Interface tidak boleh kosong');
@@ -79,6 +88,12 @@ const getInterfaceTraffic = async (iface) => {
   return result;
 };
 
+const getSystem = async () => {
+  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
+  return await conn.write('/system/resource/print');
+};
+
+
 
 module.exports = {
   connectToMikrotik,
@@ -88,4 +103,5 @@ module.exports = {
   getDevices,
   getInterfaces,
   getInterfaceTraffic,
+  getSystem,
 };
