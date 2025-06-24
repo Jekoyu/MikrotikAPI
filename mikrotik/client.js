@@ -56,7 +56,7 @@ const pingAddress = async (ip) => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
   return await conn.write('/ping', [
     `=address=${ip}`,
-    '=count=3',
+    '=count=1',
   ]);
 };
 const getDevices = async () => {
