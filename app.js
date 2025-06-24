@@ -2,7 +2,7 @@ const express = require('express');
 const mikrotikController = require('./Controllers/mikrotikController');
 
 const app = express();
-const port = 3000;
+const port = 5000;
 
 // Middleware untuk parsing JSON request body (jika diperlukan)
 app.use(express.json());

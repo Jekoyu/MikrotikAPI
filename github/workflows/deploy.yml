@@ -1,0 +1,31 @@
+name: Deploy with pnpm & PM2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Deploy to server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          export PNPM_HOME="/home/${{ secrets.SERVER_USER }}/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          cd /var/www/MikrotikAPI
+          git pull origin main
+          pnpm install
+          pm2 restart your-app || pm2 start app.js --name "your-app"
+          pm2 save
+        EOF
