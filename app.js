@@ -1,22 +1,25 @@
 const express = require('express');
-const mikrotikController = require('./Controllers/mikrotikController');
+const dotenv = require('dotenv');
+const mikrotikService = require('./services/mikrotikService'); // Pastikan ini benar
+const mikrotikRoutes = require('./routes/mikrotikRoutes'); // Sesuaikan dengan rute Anda
+
+dotenv.config();
 
 const app = express();
-const port = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Middleware untuk parsing JSON request body (jika diperlukan)
+// Middleware (jika ada)
 app.use(express.json());
 
-// Routes
-app.get('/interfaces', mikrotikController.getInterfaces);
-app.get('/traffic/:interface', mikrotikController.getTraffic);
-app.get('/latency', mikrotikController.getLatency);
-app.get('/', (req, res) => {
-  res.send('Welcome to the Mikrotik API');
+// Route
+app.use('/api/mikrotik', mikrotikRoutes);
+
+// Health check endpoint
+app.get('/health', (_, res) => {
+  res.json({ status: 'ok' });
 });
-app.get('/status', (req, res) => {
-  res.send('API is running smoothly');
-});// Start the server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`✅ Server is running at http://localhost:${PORT}`);
 });
