@@ -2,6 +2,9 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mikrotikRoutes = require('./routes/mikrotikRoutes');
 const { connectToMikrotik } = require('./mikrotik/client');
+const startTrafficLogger = require('./scheduler/trafficLogger');
+const { connectRedis } = require('./config/redisClient');
+
 
 dotenv.config();
 const app = express();
@@ -16,10 +19,11 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, async () => {
   console.log(`✅ Server is running at http://localhost:${PORT}`);
-
-  // Langsung connect saat server mulai
+  await connectRedis();
   const connected = await connectToMikrotik();
-  if (!connected) {
-    console.warn('⚠️ Gagal konek ke Mikrotik saat startup. Coba akses /connect secara manual.');
+  if (connected) {
+    startTrafficLogger();
+  } else {
+    console.warn('⚠️ Gagal connect Mikrotik. Jalankan manual /connect');
   }
 });

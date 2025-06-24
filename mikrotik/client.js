@@ -63,6 +63,22 @@ const getDevices = async () => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
   return await conn.write('/ip/dhcp-server/lease/print');
 };
+const getInterfaces = async () => {
+  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
+  return await conn.write('/interface/print');
+};
+const getInterfaceTraffic = async (iface) => {
+  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
+  if (!iface) throw new Error('Interface tidak boleh kosong');
+
+  const result = await conn.write('/interface/monitor-traffic', [
+    `=interface=${iface}`,
+    '=once='
+  ]);
+
+  return result;
+};
+
 
 module.exports = {
   connectToMikrotik,
@@ -70,4 +86,6 @@ module.exports = {
   pingAddress,
   isConnected,
   getDevices,
+  getInterfaces,
+  getInterfaceTraffic,
 };
