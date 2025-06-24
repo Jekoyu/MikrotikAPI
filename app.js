@@ -1,15 +1,17 @@
 const express = require('express');
+const cors = require('cors'); // <-- Tambahkan ini
 const dotenv = require('dotenv');
 const mikrotikRoutes = require('./routes/mikrotikRoutes');
 const { connectToMikrotik } = require('./mikrotik/client');
 const startTrafficLogger = require('./scheduler/trafficLogger');
 const { connectRedis } = require('./config/redisClient');
 
-
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
+app.use(cors()); // <-- Tambahkan ini
 app.use(express.json());
 app.use(mikrotikRoutes);
 
