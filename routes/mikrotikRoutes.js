@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mikrotikController = require('../Controllers/mikrotikController');
+const mikrotikController = require('../controllers/mikrotikController');
 
 router.get('/interfaces', mikrotikController.getInterfaces);
 router.get('/traffic/:interface', mikrotikController.getTraffic);
