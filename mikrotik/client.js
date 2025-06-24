@@ -94,8 +94,18 @@ const getSystem = async () => {
 };
 const getLogs = async () => {
   if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  return await conn.write('/log/print');
+  
+  const logs = await conn.write('/log/print');
+  
+  // Filter log: kecualikan log "admin logged out" dari IP tertentu
+  const filteredLogs = logs.filter(log => {
+    // Cek apakah log mengandung kata "admin logged out" dan IP tertentu
+    return !(log.message.includes('user admin logged out') || log.message.includes('user admin logged in') || log.message.includes('10.20.20.1'));
+  });
+
+  return filteredLogs;
 };
+
 
 
 
