@@ -61,9 +61,9 @@ const getLatency = async (req, res) => {
     const data = await withTimeout(
       connection.query('/ping', [
         `=address=${process.env.MIKROTIK_HOST}`,
-        '=count=3',
+        '=count=1',
       ]),
-      5000
+      10000
     );
 
     let totalLatency = 0;
