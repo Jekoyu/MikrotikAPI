@@ -18,7 +18,7 @@ async function startTrafficLogger() {
     return;
   }
 
-  const CRON_PATTERN = '0 */1 * * * *'; // Tiap 5 menit
+  const CRON_PATTERN = '0 */5 * * * *'; // Tiap 5 menit
   console.log(`📆 Jadwal scheduler: '${CRON_PATTERN}' (Asia/Jakarta)`);
 
   job = new CronJob(
