@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { connectToMikrotik, getIdentity, pingAddress, isConnected ,getInterfaces,getInterfaceTraffic,getDevices,getSystem,getLogs} = require('../mikrotik/client');
+const { connectToMikrotik, getIdentity, pingAddress, isConnected ,getInterfaces,getInterfaceTraffic,getDevices,getSystem,getLogs,getAllInterfaceTraffic} = require('../mikrotik/client');
 const { getAverageTraffic, getAllAverages } = require('../utils/getAverageTraffic');
 const {getGraphAll,getGraphPerIface,
 } = require('../controllers/graph');
@@ -41,6 +41,16 @@ router.get('/traffic/:iface', async (req, res) => {
       res.json({ iface, traffic: result });
     } catch (err) {
       res.status(500).json({ error: `Gagal ambil traffic untuk ${iface}: ${err.message}` });
+    }
+  });
+  router.get('/alltraffic', async (req, res) => {
+    if (!isConnected()) return res.status(400).json({ error: 'Belum konek Mikrotik' });
+  
+    try {
+      const result = await getAllInterfaceTraffic();
+      res.json({ traffic: result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
   

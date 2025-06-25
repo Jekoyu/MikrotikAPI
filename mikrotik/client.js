@@ -1,5 +1,5 @@
-const { RouterOSAPI } = require('node-routeros');
-require('dotenv').config();
+const { RouterOSAPI } = require("node-routeros");
+require("dotenv").config();
 
 let conn;
 let hbTimer;
@@ -7,7 +7,7 @@ let hbTimer;
 const connectToMikrotik = async () => {
   const { MIKROTIK_HOST, MIKROTIK_USER, MIKROTIK_PASS } = process.env;
 
-  console.log('🚀 Mencoba connect ke Mikrotik...');
+  console.log("🚀 Mencoba connect ke Mikrotik...");
 
   conn = new RouterOSAPI({
     host: MIKROTIK_HOST,
@@ -20,12 +20,12 @@ const connectToMikrotik = async () => {
 
   try {
     await conn.connect();
-    const identity = await conn.write('/system/identity/print');
-    console.log('✅ Connected! 📛 Identity:', identity);
+    const identity = await conn.write("/system/identity/print");
+    console.log("✅ Connected! 📛 Identity:", identity);
     startHeartbeat();
     return true;
   } catch (err) {
-    console.error('❌ Gagal connect:', err.message || err);
+    console.error("❌ Gagal connect:", err.message || err);
     return false;
   }
 };
@@ -34,81 +34,103 @@ const startHeartbeat = () => {
   clearInterval(hbTimer);
   hbTimer = setInterval(async () => {
     try {
-      const res = await conn.write('/system/identity/print');
-      console.log('💓 Heartbeat OK:', res[0]?.name);
+      const res = await conn.write("/system/identity/print");
+      console.log("💓 Heartbeat OK:", res[0]?.name);
     } catch (err) {
-      console.warn('💔 Heartbeat gagal:', err.message || err);
+      console.warn("💔 Heartbeat gagal:", err.message || err);
     }
   }, 30000);
 };
 
 const getIdentity = async () => {
   try {
-    const res = await conn.write('/system/identity/print');
+    const res = await conn.write("/system/identity/print");
     return res;
   } catch (err) {
-    throw new Error('❌ Gagal ambil identity: ' + err.message);
+    throw new Error("❌ Gagal ambil identity: " + err.message);
   }
 };
 const isConnected = () => !!conn;
 
 const pingAddress = async (ip) => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  return await conn.write('/ping', [
-    `=address=${ip}`,
-    '=count=1',
-  ]);
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+  return await conn.write("/ping", [`=address=${ip}`, "=count=1"]);
 };
 const getDevices = async () => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  return await conn.write('/ip/dhcp-server/lease/print');
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+  return await conn.write("/ip/dhcp-server/lease/print");
 };
 const getInterfaces = async () => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
 
-  const allInterfaces = await conn.write('/interface/print');
-  
- 
-  const filtered = allInterfaces.filter(i =>
-    /^ether[1-5]$/.test(i.name)
-  );
+  const allInterfaces = await conn.write("/interface/print");
+
+  const filtered = allInterfaces.filter((i) => /^ether[1-5]$/.test(i.name));
 
   return filtered;
 };
 
 const getInterfaceTraffic = async (iface) => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  if (!iface) throw new Error('Interface tidak boleh kosong');
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+  if (!iface) throw new Error("Interface tidak boleh kosong");
 
-  const result = await conn.write('/interface/monitor-traffic', [
+  const result = await conn.write("/interface/monitor-traffic", [
     `=interface=${iface}`,
-    '=once='
+    "=once=",
   ]);
 
   return result;
 };
+const getAllInterfaceTraffic = async () => {
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+
+  const interfaceNames = ["ether1", "ether2", "ether3", "ether4", "ether5"];
+
+  const trafficResults = await Promise.all(
+    interfaceNames.map(async (iface) => {
+      try {
+        const result = await conn.write("/interface/monitor-traffic", [
+          `=interface=${iface}`,
+          "=once=",
+        ]);
+        return { name: iface, traffic: result[0] || {} };
+      } catch (err) {
+        console.warn(`⚠️ Gagal ambil traffic ${iface}:`, err.message);
+        return { name: iface, traffic: null };
+      }
+    })
+  );
+
+  // Ubah ke format objek agar mudah dipakai
+  const trafficData = {};
+  for (const { name, traffic } of trafficResults) {
+    trafficData[name] = traffic;
+  }
+
+  return trafficData;
+};
 
 const getSystem = async () => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  return await conn.write('/system/resource/print');
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+  return await conn.write("/system/resource/print");
 };
 const getLogs = async () => {
-  if (!conn) throw new Error('Belum terhubung ke Mikrotik');
-  
-  const logs = await conn.write('/log/print');
-  
+  if (!conn) throw new Error("Belum terhubung ke Mikrotik");
+
+  const logs = await conn.write("/log/print");
+
   // Filter log: kecualikan log "admin logged out" dari IP tertentu
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs.filter((log) => {
     // Cek apakah log mengandung kata "admin logged out" dan IP tertentu
-    return !(log.message.includes('user admin logged out') || log.message.includes('user admin logged in') || log.message.includes('10.20.20.1'));
+    return !(
+      log.message.includes("user admin logged out") ||
+      log.message.includes("user admin logged in") ||
+      log.message.includes("10.20.20.1")
+    );
   });
 
   return filteredLogs;
 };
-
-
-
-
 
 module.exports = {
   connectToMikrotik,
@@ -119,5 +141,6 @@ module.exports = {
   getInterfaces,
   getInterfaceTraffic,
   getSystem,
-  getLogs
+  getLogs,
+  getAllInterfaceTraffic,
 };
